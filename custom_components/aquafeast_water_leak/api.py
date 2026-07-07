@@ -33,7 +33,7 @@ class AquafeastApi:
             return await response.json(content_type=None)
 
     async def async_send_command(self, key: str, value: str):
-        """Send command to device."""
+        """Send generic command to device."""
         url = "https://interface.briskworld.com/device/control/app"
         params = {
             "strMac": self.mac_address,
@@ -51,17 +51,23 @@ class AquafeastApi:
                 return await response.json(content_type=None)
             except Exception:
                 return {"raw": text}
-                
-        async def async_set_warning_minimum_flow(self, flow_lph: float):
+
+    async def async_set_warning_minimum_flow(self, flow_lph: float):
         """Set warning minimum flow in L/hr."""
         value = int(round(flow_lph * 10))
+        return await self.async_send_command("22", str(value))
 
-        url = "https://interface.briskworld.com/device/control/app"
+    async def async_set_mode(self, mode: int, flow_set: int = 0, hour_set: float | None = None):
+        """Set operation mode."""
+        url = "https://interface.briskworld.com/device/setMode/app"
         params = {
             "strMac": self.mac_address,
-            "key": "22",
-            "value": str(value),
+            "mode": str(mode),
+            "flowSet": str(flow_set),
         }
+
+        if hour_set is not None:
+            params["hourSet"] = str(hour_set)
 
         session = async_get_clientsession(self.hass)
         timeout = aiohttp.ClientTimeout(total=15)

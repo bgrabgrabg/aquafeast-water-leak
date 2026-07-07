@@ -79,3 +79,25 @@ class AquafeastApi:
                 return await response.json(content_type=None)
             except Exception:
                 return {"raw": text}
+
+
+    async def async_set_clock(self, hour: int, minute: int, second: int):
+        """Set device clock."""
+        url = "https://interface.briskworld.com/device/setHour/app"
+        params = {
+            "strMac": self.mac_address,
+            "hour": str(hour),
+            "minute": str(minute),
+            "second": str(second),
+        }
+
+        session = async_get_clientsession(self.hass)
+        timeout = aiohttp.ClientTimeout(total=15)
+
+        async with session.get(url, params=params, timeout=timeout) as response:
+            response.raise_for_status()
+            text = await response.text()
+            try:
+                return await response.json(content_type=None)
+            except Exception:
+                return {"raw": text}

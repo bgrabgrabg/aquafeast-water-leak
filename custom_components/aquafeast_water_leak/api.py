@@ -51,3 +51,25 @@ class AquafeastApi:
                 return await response.json(content_type=None)
             except Exception:
                 return {"raw": text}
+                
+        async def async_set_warning_minimum_flow(self, flow_lph: float):
+        """Set warning minimum flow in L/hr."""
+        value = int(round(flow_lph * 10))
+
+        url = "https://interface.briskworld.com/device/control/app"
+        params = {
+            "strMac": self.mac_address,
+            "key": "22",
+            "value": str(value),
+        }
+
+        session = async_get_clientsession(self.hass)
+        timeout = aiohttp.ClientTimeout(total=15)
+
+        async with session.get(url, params=params, timeout=timeout) as response:
+            response.raise_for_status()
+            text = await response.text()
+            try:
+                return await response.json(content_type=None)
+            except Exception:
+                return {"raw": text}

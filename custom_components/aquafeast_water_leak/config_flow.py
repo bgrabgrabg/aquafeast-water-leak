@@ -6,7 +6,7 @@ import voluptuous as vol
 
 from homeassistant import config_entries
 
-from .const import CONF_DEVICE_MODEL, CONF_MAC, DEFAULT_DEVICE_MODEL, DOMAIN
+from .const import CONF_DEVICE_MODEL, CONF_MAC, CONF_SCAN_INTERVAL, DEFAULT_DEVICE_MODEL, DEFAULT_SCAN_INTERVAL, DOMAIN
 
 
 class AquafeastWaterLeakConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):

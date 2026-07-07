@@ -11,7 +11,7 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.core import HomeAssistant
 
-from .const import CONF_DEVICE_MODEL, CONF_MAC, DEFAULT_SCAN_INTERVAL, DOMAIN
+from .const import CONF_DEVICE_MODEL, CONF_MAC, DEFAULT_SCAN_INTERVAL, DOMAIN, GET_STATE_URL
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -33,11 +33,8 @@ class AquafeastDataUpdateCoordinator(DataUpdateCoordinator):
 
     async def _async_update_data(self) -> dict:
         """Fetch data from the BRISK/Aquafeast cloud API."""
-        url = (
-            "http://interface.briskworld.com/devSta/getState/app"
-            f"?device={self.mac_address.replace(':', '').upper()}"
-            f"&deviceModel={self.device_model}"
-        )
+        device_id = self.mac_address.replace(":", "").upper()
+        url = f"{GET_STATE_URL}?device={device_id}&deviceModel={self.device_model}"
 
         try:
             session = async_get_clientsession(self.hass)

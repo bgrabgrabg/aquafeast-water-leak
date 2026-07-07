@@ -8,7 +8,7 @@ from homeassistant.core import HomeAssistant
 from .const import DOMAIN
 from .coordinator import AquafeastDataUpdateCoordinator
 
-PLATFORMS: list[str] = ["sensor", "binary_sensor"]
+PLATFORMS: list[str] = ["sensor", "button"]
 
 
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:
@@ -25,6 +25,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     hass.data[DOMAIN][entry.entry_id] = {
         "coordinator": coordinator,
+        "api": coordinator.api,
         "config": dict(entry.data),
     }
 

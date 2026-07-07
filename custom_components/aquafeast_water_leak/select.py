@@ -70,6 +70,9 @@ class AquafeastOperationModeSelect(CoordinatorEntity, SelectEntity):
         except (TypeError, ValueError):
             return None
 
+         if code == 1:
+            return "Unprotected"
+
         return MODE_REVERSE.get(code)
 
     async def async_select_option(self, option: str) -> None:

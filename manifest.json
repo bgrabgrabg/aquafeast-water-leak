@@ -1,0 +1,12 @@
+{
+  "domain": "aquafeast_water_leak",
+  "name": "Aquafeast Water Leak",
+  "version": "0.0.1",
+  "documentation": "https://github.com/YOUR_GITHUB_USERNAME/aquafeast-water-leak",
+  "issue_tracker": "https://github.com/YOUR_GITHUB_USERNAME/aquafeast-water-leak/issues",
+  "dependencies": [],
+  "codeowners": ["Aquafeast"],
+  "config_flow": true,
+  "iot_class": "cloud_polling",
+  "requirements": []
+}

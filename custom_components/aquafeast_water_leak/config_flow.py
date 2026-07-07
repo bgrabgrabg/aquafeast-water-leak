@@ -26,8 +26,13 @@ class AquafeastWaterLeakConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         errors = {}
 
         if user_input is not None:
-            await self.async_set_unique_id(user_input[CONF_MAC].lower())
+            user_input[CONF_DEVICE_MODEL] = DEFAULT_DEVICE_MODEL
+
+            await self.async_set_unique_id(
+                user_input[CONF_MAC].replace(":", "").replace("-", "").lower()
+            )
             self._abort_if_unique_id_configured()
+
             return self.async_create_entry(
                 title=f"Aquafeast {user_input[CONF_MAC]}",
                 data=user_input,
@@ -36,7 +41,6 @@ class AquafeastWaterLeakConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         data_schema = vol.Schema(
             {
                 vol.Required(CONF_MAC): str,
-                vol.Optional(CONF_DEVICE_MODEL, default=DEFAULT_DEVICE_MODEL): str,
                 vol.Optional(CONF_SCAN_INTERVAL, default=DEFAULT_SCAN_INTERVAL): int,
             }
         )

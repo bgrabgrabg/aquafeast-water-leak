@@ -5,13 +5,17 @@ from __future__ import annotations
 from datetime import timedelta
 import logging
 
-import aiohttp
-
-from homeassistant.helpers.aiohttp_client import async_get_clientsession
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
-from .const import CONF_DEVICE_MODEL, CONF_MAC, DEFAULT_SCAN_INTERVAL, DOMAIN, GET_STATE_URL
+from .api import AquafeastApi
+from .const import (
+    CONF_DEVICE_MODEL,
+    CONF_MAC,
+    CONF_SCAN_INTERVAL,
+    DEFAULT_SCAN_INTERVAL,
+    DOMAIN,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -21,33 +25,30 @@ class AquafeastDataUpdateCoordinator(DataUpdateCoordinator):
 
     def __init__(self, hass: HomeAssistant, entry_data: dict) -> None:
         """Initialize the coordinator."""
-        self.mac_address = entry_data[CONF_MAC]
-        self.device_model = entry_data[CONF_DEVICE_MODEL]
+        self.api = AquafeastApi(
+            hass,
+            entry_data[CONF_MAC],
+            entry_data[CONF_DEVICE_MODEL],
+        )
+
+        scan_interval = entry_data.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
 
         super().__init__(
             hass,
             _LOGGER,
             name=DOMAIN,
-            update_interval=timedelta(seconds=DEFAULT_SCAN_INTERVAL),
+            update_interval=timedelta(seconds=scan_interval),
         )
 
     async def _async_update_data(self) -> dict:
-        """Fetch data from the BRISK/Aquafeast cloud API."""
-        device_id = self.mac_address.replace(":", "").upper()
-        url = f"{GET_STATE_URL}?device={device_id}&deviceModel={self.device_model}"
-
+        """Fetch data from API."""
         try:
-            session = async_get_clientsession(self.hass)
-            async with session.get(url, timeout=15) as response:
-                response.raise_for_status()
-                data = await response.json()
+            data = await self.api.async_get_state()
 
-            if data.get("resCode") != "0":
+            if data.get("resCode") not in (None, "0", 0):
                 raise UpdateFailed(f"API error: {data.get('resMsg')}")
 
             return data
 
-        except aiohttp.ClientError as err:
-            raise UpdateFailed(f"Error communicating with API: {err}") from err
         except Exception as err:
             raise UpdateFailed(f"Unexpected error: {err}") from err

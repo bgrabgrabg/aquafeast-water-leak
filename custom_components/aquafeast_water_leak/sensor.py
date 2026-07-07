@@ -54,7 +54,8 @@ class AquafeastProtectionModeSensor(CoordinatorEntity, SensorEntity):
 
     _attr_has_entity_name = True
     _attr_name = "protection mode"
-
+    _attr_icon = "mdi:shield-lock"   # примерно
+    
     def __init__(self, coordinator, entry: ConfigEntry) -> None:
         """Initialize the sensor."""
         super().__init__(coordinator)

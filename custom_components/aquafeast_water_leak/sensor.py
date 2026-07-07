@@ -18,60 +18,31 @@ async def async_setup_entry(
 ) -> None:
     """Set up Aquafeast sensors."""
     coordinator = hass.data[DOMAIN][entry.entry_id]["coordinator"]
-
-    async_add_entities(
-        [
-            AquafeastStatusSensor(coordinator, entry),
-            AquafeastProtectionModeSensor(coordinator, entry),
-        ]
-    )
+    async_add_entities([AquafeastRawStatusSensor(coordinator, entry)])
 
 
-class AquafeastStatusSensor(CoordinatorEntity, SensorEntity):
-    """Representation of Aquafeast API status."""
+class AquafeastRawStatusSensor(CoordinatorEntity, SensorEntity):
+    """Raw status sensor."""
 
     _attr_has_entity_name = True
-    _attr_name = "status"
+    _attr_name = "raw status"
 
     def __init__(self, coordinator, entry: ConfigEntry) -> None:
-        """Initialize the sensor."""
         super().__init__(coordinator)
-        self._attr_unique_id = f"{entry.entry_id}_status"
+        self._attr_unique_id = f"{entry.entry_id}_raw_status"
 
     @property
     def native_value(self):
-        """Return the sensor state."""
-        return self.coordinator.data.get("resMsg")
+        return self.coordinator.data.get("resMsg", "unknown")
 
     @property
     def extra_state_attributes(self):
-        """Return extra state attributes."""
-        return self.coordinator.data.get("data", {})
+        attrs = {}
+        attrs["resCode"] = self.coordinator.data.get("resCode")
+        attrs["state"] = self.coordinator.data.get("state")
 
-
-class AquafeastProtectionModeSensor(CoordinatorEntity, SensorEntity):
-    """Representation of Aquafeast protection mode."""
-
-    _attr_has_entity_name = True
-    _attr_name = "protection mode"
-    _attr_icon = "mdi:shield-lock"   # примерно
-    
-    def __init__(self, coordinator, entry: ConfigEntry) -> None:
-        """Initialize the sensor."""
-        super().__init__(coordinator)
-        self._attr_unique_id = f"{entry.entry_id}_protection_mode"
-
-    @property
-    def native_value(self):
-        """Return the current protection mode."""
         data = self.coordinator.data.get("data", {})
-        raw_mode = data.get("data02")
+        if isinstance(data, dict):
+            attrs.update(data)
 
-        if raw_mode is None:
-            return None
-
-        try:
-            mode = int(raw_mode) - 16
-            return f"Mode {mode}"
-        except (ValueError, TypeError):
-            return raw_mode
+        return attrs

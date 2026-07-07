@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import asyncio
-import logging
 
 from homeassistant.components.select import SelectEntity
 from homeassistant.config_entries import ConfigEntry
@@ -13,10 +12,8 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN
 
-_LOGGER = logging.getLogger(__name__)
-
 MODE_MAP = {
-    "Unprotected": 1,
+    "UnProtect": 1,
     "Mode 1": 17,
     "Mode 2": 18,
     "Mode 3": 19,
@@ -70,8 +67,8 @@ class AquafeastOperationModeSelect(CoordinatorEntity, SelectEntity):
         except (TypeError, ValueError):
             return None
 
-         if code == 1:
-            return "Unprotected"
+        if code == 1:
+            return "UnProtect"
 
         return MODE_REVERSE.get(code)
 

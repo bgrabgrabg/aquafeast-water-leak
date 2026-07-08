@@ -55,12 +55,12 @@ class AquafeastValveSwitch(CoordinatorEntity, SwitchEntity):
     def is_on(self) -> bool | None:
         """Return valve state."""
         data = self.coordinator.data.get("data", {})
-        value = data.get("data05")
+        value = data.get("data01")
 
         if value is None:
             return None
 
-        return str(value) == "2"
+        return str(value) == "1"
 
     async def async_turn_on(self, **kwargs) -> None:
         """Open valve."""

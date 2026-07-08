@@ -4,11 +4,42 @@ from __future__ import annotations
 
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import UnitOfTemperature
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN
+
+
+def _measurement_system(data: dict) -> str:
+    return "imperial" if str(data.get("data09")) == "1" else "metric"
+
+
+def _is_imperial(data: dict) -> bool:
+    return _measurement_system(data) == "imperial"
+
+
+def _parse_optional_number(raw):
+    if raw in (None, "", "-", "--"):
+        return None
+    try:
+        return float(raw)
+    except (TypeError, ValueError):
+        return None
+
+
+def _parse_temperature_raw(raw):
+    if raw in (None, "", "-", "--"):
+        return None
+    try:
+        value = int(raw)
+    except (TypeError, ValueError):
+        return None
+
+    whole = value // 256
+    fraction = value % 256
+    return round(whole + (fraction / 100), 1)
 
 
 async def async_setup_entry(
@@ -17,32 +48,122 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up Aquafeast sensors."""
-    coordinator = hass.data[DOMAIN][entry.entry_id]["coordinator"]
-    async_add_entities([AquafeastRawStatusSensor(coordinator, entry)])
+    stored = hass.data[DOMAIN][entry.entry_id]
+    api = stored["api"]
+    coordinator = stored["coordinator"]
+
+    async_add_entities(
+        [
+            AquafeastMeasurementSystemSensor(entry, api, coordinator),
+            AquafeastWaterTemperatureSensor(entry, api, coordinator),
+            AquafeastWaterFlowRateSensor(entry, api, coordinator),
+            AquafeastWaterPressureSensor(entry, api, coordinator),
+            AquafeastTotalWaterSensor(entry, api, coordinator),
+        ]
+    )
 
 
-class AquafeastRawStatusSensor(CoordinatorEntity, SensorEntity):
-    """Raw status sensor."""
+class AquafeastBaseSensor(CoordinatorEntity, SensorEntity):
+    """Base Aquafeast sensor."""
 
     _attr_has_entity_name = True
-    _attr_name = "raw status"
 
-    def __init__(self, coordinator, entry: ConfigEntry) -> None:
+    def __init__(self, entry, api, coordinator) -> None:
         super().__init__(coordinator)
-        self._attr_unique_id = f"{entry.entry_id}_raw_status"
+        self._entry = entry
+        self._api = api
+
+    @property
+    def _data(self) -> dict:
+        return self.coordinator.data.get("data", {})
+
+
+class AquafeastMeasurementSystemSensor(AquafeastBaseSensor):
+    """Measurement system sensor."""
+
+    _attr_name = "measurement system"
+
+    def __init__(self, entry, api, coordinator) -> None:
+        super().__init__(entry, api, coordinator)
+        self._attr_unique_id = f"{entry.entry_id}_measurement_system"
+
+    @property
+    def native_value(self) -> str:
+        return "Imperial" if _is_imperial(self._data) else "Metric"
+
+
+class AquafeastWaterTemperatureSensor(AquafeastBaseSensor):
+    """Water temperature sensor."""
+
+    _attr_name = "water temperature"
+    _attr_device_class = "temperature"
+
+    def __init__(self, entry, api, coordinator) -> None:
+        super().__init__(entry, api, coordinator)
+        self._attr_unique_id = f"{entry.entry_id}_water_temperature"
+
+    @property
+    def native_unit_of_measurement(self):
+        return UnitOfTemperature.FAHRENHEIT if _is_imperial(self._data) else UnitOfTemperature.CELSIUS
 
     @property
     def native_value(self):
-        return self.coordinator.data.get("resMsg", "unknown")
+        raw_value = self._data.get("data04")
+        return _parse_temperature_raw(raw_value)
+
+
+class AquafeastWaterFlowRateSensor(AquafeastBaseSensor):
+    """Water flow rate sensor."""
+
+    _attr_name = "water flow rate"
+
+    def __init__(self, entry, api, coordinator) -> None:
+        super().__init__(entry, api, coordinator)
+        self._attr_unique_id = f"{entry.entry_id}_water_flow_rate"
 
     @property
-    def extra_state_attributes(self):
-        attrs = {}
-        attrs["resCode"] = self.coordinator.data.get("resCode")
-        attrs["state"] = self.coordinator.data.get("state")
+    def native_unit_of_measurement(self):
+        return "GPM" if _is_imperial(self._data) else "L/hr"
 
-        data = self.coordinator.data.get("data", {})
-        if isinstance(data, dict):
-            attrs.update(data)
+    @property
+    def native_value(self):
+        raw_value = self._data.get("data1C")
+        return _parse_optional_number(raw_value)
 
-        return attrs
+
+class AquafeastWaterPressureSensor(AquafeastBaseSensor):
+    """Water pressure sensor."""
+
+    _attr_name = "water pressure"
+
+    def __init__(self, entry, api, coordinator) -> None:
+        super().__init__(entry, api, coordinator)
+        self._attr_unique_id = f"{entry.entry_id}_water_pressure"
+
+    @property
+    def native_unit_of_measurement(self):
+        return "psi" if _is_imperial(self._data) else "MPa"
+
+    @property
+    def native_value(self):
+        raw_value = self._data.get("data1A")
+        return _parse_optional_number(raw_value)
+
+
+class AquafeastTotalWaterSensor(AquafeastBaseSensor):
+    """Total water sensor."""
+
+    _attr_name = "total water"
+
+    def __init__(self, entry, api, coordinator) -> None:
+        super().__init__(entry, api, coordinator)
+        self._attr_unique_id = f"{entry.entry_id}_total_water"
+
+    @property
+    def native_unit_of_measurement(self):
+        return "gal" if _is_imperial(self._data) else "m³"
+
+    @property
+    def native_value(self):
+        raw_value = self._data.get("data1D")
+        return _parse_optional_number(raw_value)

@@ -13,8 +13,7 @@ PLATFORMS: list[str] = [
     "switch",
     "number",
     "select",
-    "button",
-    "binary_sensor",
+    "button",    
 ]
 
 

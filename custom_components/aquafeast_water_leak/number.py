@@ -61,6 +61,14 @@ class AquafeastWarningMinimumFlowNumber(CoordinatorEntity, NumberEntity):
         return self.coordinator.data.get("data", {})
 
     @property
+    def available(self) -> bool:
+        """Return if entity is available."""
+        if not super().available:
+            return False
+        mode = self._data.get("data02")
+        return str(mode) != "2"
+
+    @property
     def native_unit_of_measurement(self):
         return "GPM" if _is_imperial(self._data) else "L/hr"
 

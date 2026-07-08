@@ -2,14 +2,17 @@
 
 from __future__ import annotations
 
-from homeassistant.components.sensor import SensorEntity
+import json
+
+from homeassistant.components.sensor import SensorDeviceClass, SensorEntity
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import UnitOfTemperature
+from homeassistant.const import EntityCategory, UnitOfTemperature
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN
+from .const import CONF_MAC, DOMAIN, MANUFACTURER, MODEL
 
 
 def _measurement_system(data: dict) -> str:
@@ -59,6 +62,7 @@ async def async_setup_entry(
             AquafeastWaterFlowRateSensor(entry, api, coordinator),
             AquafeastWaterPressureSensor(entry, api, coordinator),
             AquafeastTotalWaterSensor(entry, api, coordinator),
+            AquafeastRawStatusSensor(entry, api, coordinator),
         ]
     )
 
@@ -72,6 +76,13 @@ class AquafeastBaseSensor(CoordinatorEntity, SensorEntity):
         super().__init__(coordinator)
         self._entry = entry
         self._api = api
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, entry.entry_id)},
+            manufacturer=MANUFACTURER,
+            model=MODEL,
+            name=entry.title,
+            serial_number=entry.data.get(CONF_MAC),
+        )
 
     @property
     def _data(self) -> dict:
@@ -82,6 +93,7 @@ class AquafeastMeasurementSystemSensor(AquafeastBaseSensor):
     """Measurement system sensor."""
 
     _attr_name = "measurement system"
+    _attr_icon = "mdi:ruler"
 
     def __init__(self, entry, api, coordinator) -> None:
         super().__init__(entry, api, coordinator)
@@ -96,7 +108,7 @@ class AquafeastWaterTemperatureSensor(AquafeastBaseSensor):
     """Water temperature sensor."""
 
     _attr_name = "water temperature"
-    _attr_device_class = "temperature"
+    _attr_device_class = SensorDeviceClass.TEMPERATURE
 
     def __init__(self, entry, api, coordinator) -> None:
         super().__init__(entry, api, coordinator)
@@ -104,7 +116,11 @@ class AquafeastWaterTemperatureSensor(AquafeastBaseSensor):
 
     @property
     def native_unit_of_measurement(self):
-        return UnitOfTemperature.FAHRENHEIT if _is_imperial(self._data) else UnitOfTemperature.CELSIUS
+        return (
+            UnitOfTemperature.FAHRENHEIT
+            if _is_imperial(self._data)
+            else UnitOfTemperature.CELSIUS
+        )
 
     @property
     def native_value(self):
@@ -116,6 +132,7 @@ class AquafeastWaterFlowRateSensor(AquafeastBaseSensor):
     """Water flow rate sensor."""
 
     _attr_name = "water flow rate"
+    _attr_icon = "mdi:waves-arrow-right"
 
     def __init__(self, entry, api, coordinator) -> None:
         super().__init__(entry, api, coordinator)
@@ -135,6 +152,7 @@ class AquafeastWaterPressureSensor(AquafeastBaseSensor):
     """Water pressure sensor."""
 
     _attr_name = "water pressure"
+    _attr_icon = "mdi:gauge"
 
     def __init__(self, entry, api, coordinator) -> None:
         super().__init__(entry, api, coordinator)
@@ -154,6 +172,7 @@ class AquafeastTotalWaterSensor(AquafeastBaseSensor):
     """Total water sensor."""
 
     _attr_name = "total water"
+    _attr_icon = "mdi:water"
 
     def __init__(self, entry, api, coordinator) -> None:
         super().__init__(entry, api, coordinator)
@@ -167,3 +186,19 @@ class AquafeastTotalWaterSensor(AquafeastBaseSensor):
     def native_value(self):
         raw_value = self._data.get("data1D")
         return _parse_optional_number(raw_value)
+
+
+class AquafeastRawStatusSensor(AquafeastBaseSensor):
+    """Raw status sensor."""
+
+    _attr_name = "raw status"
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_icon = "mdi:code-json"
+
+    def __init__(self, entry, api, coordinator) -> None:
+        super().__init__(entry, api, coordinator)
+        self._attr_unique_id = f"{entry.entry_id}_raw_status"
+
+    @property
+    def native_value(self) -> str:
+        return json.dumps(self.coordinator.data, ensure_ascii=False, sort_keys=True)

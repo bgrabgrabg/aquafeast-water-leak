@@ -73,3 +73,14 @@ class AquafeastValveSwitch(CoordinatorEntity, SwitchEntity):
         await self._api.async_send_command("01", "0")
         await asyncio.sleep(2)
         await self.coordinator.async_request_refresh()
+
+    @property
+    def is_on(self) -> bool | None:
+        """Return valve state."""
+        data = self.coordinator.data.get("data", {})
+        value = data.get("data05")
+
+        if value is None:
+            return None
+
+        return str(value) == "2"

@@ -135,10 +135,13 @@ class AquafeastProtectionStateSensor(AquafeastBaseSensor):
         except (TypeError, ValueError):
             return "Unknown"
 
-        if code == 1:
+        if code == 2:
             return "UnProtected"
 
-        return "Protected"
+        if code in (17, 18, 19):
+            return "Protected"
+
+        return "Unknown"
 
 
 class AquafeastWaterTemperatureSensor(AquafeastBaseSensor):

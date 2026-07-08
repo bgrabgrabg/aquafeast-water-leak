@@ -18,6 +18,9 @@ MODE_MAP = {
     "Mode 1": 17,
     "Mode 2": 18,
     "Mode 3": 19,
+    "Mode 4": 20,
+    "Mode 5": 21,
+    "Mode 6": 22,
 }
 
 MODE_STATUS_MAP = {
@@ -25,6 +28,9 @@ MODE_STATUS_MAP = {
     17: "Mode 1",
     18: "Mode 2",
     19: "Mode 3",
+    20: "Mode 4",
+    21: "Mode 5",
+    22: "Mode 6",
 }
 
 

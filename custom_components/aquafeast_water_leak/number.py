@@ -7,10 +7,11 @@ import asyncio
 from homeassistant.components.number import NumberEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN
+from .const import CONF_MAC, DOMAIN, MANUFACTURER, MODEL
 
 
 def _is_imperial(data: dict) -> bool:
@@ -47,6 +48,13 @@ class AquafeastWarningMinimumFlowNumber(CoordinatorEntity, NumberEntity):
         self._entry = entry
         self._api = api
         self._attr_unique_id = f"{entry.entry_id}_warning_minimum_flow"
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, entry.entry_id)},
+            manufacturer=MANUFACTURER,
+            model=MODEL,
+            name=entry.title,
+            serial_number=entry.data.get(CONF_MAC),
+        )
 
     @property
     def _data(self) -> dict:

@@ -20,7 +20,12 @@ MODE_MAP = {
     "Mode 3": 19,
 }
 
-MODE_REVERSE = {v: k for k, v in MODE_MAP.items()}
+MODE_STATUS_MAP = {
+    2: "UnProtect",
+    17: "Mode 1",
+    18: "Mode 2",
+    19: "Mode 3",
+}
 
 
 async def async_setup_entry(
@@ -75,10 +80,7 @@ class AquafeastOperationModeSelect(CoordinatorEntity, SelectEntity):
         except (TypeError, ValueError):
             return None
 
-        if code == 1:
-            return "UnProtect"
-
-        return MODE_REVERSE.get(code)
+        return MODE_STATUS_MAP.get(code)
 
     async def async_select_option(self, option: str) -> None:
         """Set operation mode."""

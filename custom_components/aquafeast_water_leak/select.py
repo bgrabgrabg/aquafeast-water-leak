@@ -54,6 +54,16 @@ class AquafeastOperationModeSelect(CoordinatorEntity, SelectEntity):
         self._attr_unique_id = f"{entry.entry_id}_operation_mode"
 
     @property
+    def device_info(self) -> DeviceInfo:
+        return DeviceInfo(
+            identifiers={(DOMAIN, self._entry.entry_id)},
+            manufacturer="Aquafeast",
+            name=f"Aquafeast {self._entry.title}",
+            model="Water Leak Controller",
+            serial_number=self._entry.data.get("mac"),
+        )
+
+    @property
     def current_option(self) -> str | None:
         """Return current operation mode."""
         data = self.coordinator.data.get("data", {})

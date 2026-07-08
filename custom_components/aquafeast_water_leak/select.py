@@ -11,7 +11,7 @@ from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN
+from .const import CONF_MAC, DOMAIN, MANUFACTURER, MODEL
 
 MODE_MAP = {
     "UnProtect": 1,
@@ -53,15 +53,12 @@ class AquafeastOperationModeSelect(CoordinatorEntity, SelectEntity):
         self._entry = entry
         self._api = api
         self._attr_unique_id = f"{entry.entry_id}_operation_mode"
-
-    @property
-    def device_info(self) -> DeviceInfo:
-        return DeviceInfo(
-            identifiers={(DOMAIN, self._entry.entry_id)},
-            manufacturer="Aquafeast",
-            name=f"Aquafeast {self._entry.title}",
-            model="Water Leak Controller",
-            serial_number=self._entry.data.get("mac"),
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, entry.entry_id)},
+            manufacturer=MANUFACTURER,
+            model=MODEL,
+            name=entry.title,
+            serial_number=entry.data.get(CONF_MAC),
         )
 
     @property
